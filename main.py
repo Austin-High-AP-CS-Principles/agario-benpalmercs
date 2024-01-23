@@ -1,5 +1,3 @@
-
-
 import pygame
 import sys
 import random
@@ -9,7 +7,7 @@ class Food(pygame.sprite.Sprite):
     # Constructor
     def __init__(self, color):
         super(Food,self).__init__() #calling on the contructor for the Sprite class
-        self.radius = 10
+        self.radius = 5
         self.image = pygame.Surface((self.radius*2,self.radius*2), pygame.SRCALPHA, 32)
         self.image = self.image.convert_alpha()
         pygame.draw.circle(self.image, color, (self.radius, self.radius), self.radius,)
@@ -17,18 +15,18 @@ class Food(pygame.sprite.Sprite):
     
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self,x,y):
+    def __init__(self):
         super(Enemy,self).__init__()
         self.color = (random.randint(0,255),random.randint(0,255),random.randint(0,255))
-        self.radius = random.randint(30,120)
-  
+        self.radius = random.randint(15,50)
         self.image = pygame.Surface((self.radius*2,self.radius*2), pygame.SRCALPHA, 32)
         self.image = self.image.convert_alpha()
         pygame.draw.circle(self.image, self.color, (self.radius, self.radius), self.radius,)
         self.rect = self.image.get_rect(center = (random.randint(10,790),random.randint(10,590)))
-        self.rect = self.image.get_rect(center = (x,y))
-        self.deltax = random.choice([-2,-1,1,2])
-        self.deltay = random.choice([-2,-1,1,2])
+        self.speed = (self.radius/(self.radius*1.2))
+        self.deltax = random.choice([-1,1])
+        self.deltay = random.choice([-1,1])
+        
 
     def move(self):
         if self.rect.left <= 0 or self.rect.right >= 800:
@@ -37,8 +35,8 @@ class Enemy(pygame.sprite.Sprite):
             self.deltay *= -1
                     
 
-        self.rect.centerx += self.deltax
-        self.rect.centery += self.deltay
+        self.rect.centerx += self.deltax*self.speed
+        self.rect.centery += self.deltay*self.speed
 
  
 
@@ -50,13 +48,40 @@ class Enemy(pygame.sprite.Sprite):
         
 
     def grow(self, growth):
+        x = self.rect.centerx
+        y = self.rect.centery
         self.radius += growth/2
         self.image = pygame.Surface((self.radius*2,self.radius*2), pygame.SRCALPHA, 32)
         self.image = self.image.convert_alpha()
         pygame.draw.circle(self.image, self.color, (self.radius, self.radius), self.radius)
+        self.rect.center = x,y
+        self.speed = (self.radius/(self.radius*1.2))
 
 
+class Player(Enemy):
+    def __init__(self):
+        super().__init__()
+        self.color=(255,255,255,255)
+        self.radius = 25
+        self.image = pygame.Surface((self.radius*2,self.radius*2), pygame.SRCALPHA, 32)
+        self.image = self.image.convert_alpha()
+        pygame.draw.circle(self.image, self.color, (self.radius, self.radius), self.radius,)
+        self.rect = self.image.get_rect(center = (100,100))
+        self.speed = (self.radius/(self.radius*1.2)) 
 
+
+    def move(self):
+        mx,my = pygame.mouse.get_pos()
+        self.distx = (self.rect.centerx - mx)*-1
+        self.disty = (self.rect.centery - my)*-1
+        hyp = math.dist(self.rect.center,(mx,my))
+        if hyp==0:
+            hyp=0.0001
+        self.deltax = self.distx/hyp
+        self.deltay = self.disty/hyp
+        self.rect.centerx += self.deltax*self.speed
+        self.rect.centery += self.deltay*self.speed
+        
 
 
 
@@ -84,13 +109,15 @@ for num in range(20):
 
 enemies = pygame.sprite.Group()
 for num in range(5):
-    enemies.add(Enemy(random.randint(0,800),random.randint(0,600)))
+    enemies.add(Enemy())
 
+players = pygame.sprite.Group()
+players.add(Player())
 
 objects = pygame.sprite.Group()
 objects.add(enemies)
 objects.add(meals)
-
+objects.add(players)
 # Main game loop
 running = True
 while running:
@@ -106,13 +133,19 @@ while running:
         enemy.move()
         for obj in objects:
             if enemy != obj:
-              if enemy.collisionDetector(obj):
-                print("collision")
-                enemy.grow(obj.radius)
-                obj.kill()
+                if enemy.collisionDetector(obj):
+                    print("collision")
+                    enemy.grow(obj.radius)
+                    obj.kill()
 
-
-  
+    for player in players:
+        player.move()
+        for obj in objects:
+            if player != obj:
+                if player.collisionDetector(obj):
+                    player.grow(obj.radius)
+                    obj.kill()
+    players.draw(screen)
     enemies.draw(screen)
     # Paste all of the Food objects ont he screen.
     meals.draw(screen)
@@ -125,6 +158,22 @@ while running:
 # Quit Pygame properly
 pygame.quit()
 sys.exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
