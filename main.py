@@ -1,7 +1,11 @@
+
+
 import pygame
 import sys
 import random
 import math
+
+
 
 class Food(pygame.sprite.Sprite):
     # Constructor
@@ -12,6 +16,9 @@ class Food(pygame.sprite.Sprite):
         self.image = self.image.convert_alpha()
         pygame.draw.circle(self.image, color, (self.radius, self.radius), self.radius,)
         self.rect = self.image.get_rect(center = (random.randint(10,790),random.randint(10,590)))
+    def relocate(self):
+        self.rect = (random.randint(10,790),random.randint(10,790))
+        
     
 
 class Enemy(pygame.sprite.Sprite):
@@ -23,7 +30,7 @@ class Enemy(pygame.sprite.Sprite):
         self.image = self.image.convert_alpha()
         pygame.draw.circle(self.image, self.color, (self.radius, self.radius), self.radius,)
         self.rect = self.image.get_rect(center = (random.randint(10,790),random.randint(10,590)))
-        self.speed = (self.radius/(self.radius*1.2))
+        self.speed = 80
         self.deltax = random.choice([-1,1])
         self.deltay = random.choice([-1,1])
         
@@ -34,9 +41,12 @@ class Enemy(pygame.sprite.Sprite):
         if self.rect.top <= 0 or self.rect.bottom >= 600:
             self.deltay *= -1
                     
-
-        self.rect.centerx += self.deltax*self.speed
-        self.rect.centery += self.deltay*self.speed
+        if self.radius<150:
+            self.rect.centerx += self.deltax * self.speed * (1/self.radius)
+            self.rect.centery += self.deltay * self.speed * (1/self.radius)
+        if self.radius>=150:
+            self.rect.centerx += self.deltax * self.speed * (1/150)
+            self.rect.centery += self.deltay * self.speed * (1/150)
 
  
 
@@ -48,14 +58,15 @@ class Enemy(pygame.sprite.Sprite):
         
 
     def grow(self, growth):
-        x = self.rect.centerx
-        y = self.rect.centery
+        self.rect.inflate((growth/2),(growth/2))
+        pos = self.rect.center
         self.radius += growth/2
         self.image = pygame.Surface((self.radius*2,self.radius*2), pygame.SRCALPHA, 32)
         self.image = self.image.convert_alpha()
         pygame.draw.circle(self.image, self.color, (self.radius, self.radius), self.radius)
-        self.rect.center = x,y
-        self.speed = (self.radius/(self.radius*1.2))
+        self.rect.center = pos
+        print(self.radius)
+      
 
 
 class Player(Enemy):
@@ -67,7 +78,7 @@ class Player(Enemy):
         self.image = self.image.convert_alpha()
         pygame.draw.circle(self.image, self.color, (self.radius, self.radius), self.radius,)
         self.rect = self.image.get_rect(center = (100,100))
-        self.speed = (self.radius/(self.radius*1.2)) 
+        self.speed = 80
 
 
     def move(self):
@@ -79,8 +90,12 @@ class Player(Enemy):
             hyp=0.0001
         self.deltax = self.distx/hyp
         self.deltay = self.disty/hyp
-        self.rect.centerx += self.deltax*self.speed
-        self.rect.centery += self.deltay*self.speed
+        if self.radius<150:
+            self.rect.centerx += self.deltax * self.speed * (1/self.radius)
+            self.rect.centery += self.deltay * self.speed * (1/self.radius)
+        if self.radius>=150:
+            self.rect.centerx += self.deltax * self.speed * (1/150)
+            self.rect.centery += self.deltay * self.speed * (1/150)
         
 
 
@@ -112,7 +127,8 @@ for num in range(5):
     enemies.add(Enemy())
 
 players = pygame.sprite.Group()
-players.add(Player())
+player = Player()
+players.add(player)
 
 objects = pygame.sprite.Group()
 objects.add(enemies)
@@ -134,9 +150,10 @@ while running:
         for obj in objects:
             if enemy != obj:
                 if enemy.collisionDetector(obj):
-                    print("collision")
-                    enemy.grow(obj.radius)
-                    obj.kill()
+                    if type(obj) == Enemy:
+                        print("collision")
+                        enemy.grow(obj.radius)
+                        obj.kill()
 
     for player in players:
         player.move()
@@ -154,19 +171,9 @@ while running:
 
     # Set a frame rate to 60 frames per second
     clock.tick(60)
-
 # Quit Pygame properly
 pygame.quit()
 sys.exit()
-
-
-
-
-
-
-
-
-
 
 
 
