@@ -7,6 +7,8 @@ import math
 
 
 
+
+
 class Food(pygame.sprite.Sprite):
     # Constructor
     def __init__(self, color):
@@ -17,7 +19,7 @@ class Food(pygame.sprite.Sprite):
         pygame.draw.circle(self.image, color, (self.radius, self.radius), self.radius,)
         self.rect = self.image.get_rect(center = (random.randint(10,790),random.randint(10,590)))
     def relocate(self):
-        self.rect = (random.randint(10,790),random.randint(10,790))
+        self.rect = self.image.get_rect(center=(random.randint(10, 790), random.randint(10, 590)))
         
     
 
@@ -58,13 +60,15 @@ class Enemy(pygame.sprite.Sprite):
         
 
     def grow(self, growth):
-        self.rect.inflate((growth/2),(growth/2))
+        self.rect.inflate_ip((growth/2, growth/2))  # Inflate in place
         pos = self.rect.center
         self.radius += growth/2
-        self.image = pygame.Surface((self.radius*2,self.radius*2), pygame.SRCALPHA, 32)
+        if self.radius >500:
+            self.radius
+        self.image = pygame.Surface((self.radius * 2, self.radius * 2), pygame.SRCALPHA, 32)
         self.image = self.image.convert_alpha()
         pygame.draw.circle(self.image, self.color, (self.radius, self.radius), self.radius)
-        self.rect.center = pos
+        self.rect = self.image.get_rect(center=pos)
         print(self.radius)
       
 
@@ -114,6 +118,11 @@ pygame.display.set_caption("Pygame Tutorial")
 WHITE = (255, 255, 255)
 BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
+
+#Create Text Surface
+font = pygame.font.Font(None, 36)  
+won_surface = font.render("You Won!", True, WHITE)
+lost_surface = font.render("You Lost!", True, WHITE)
 # Create clock to later control frame rate
 clock = pygame.time.Clock()
 
@@ -137,23 +146,12 @@ objects.add(players)
 # Main game loop
 running = True
 while running:
-    # Event handling
-    for event in pygame.event.get(): # pygame.event.get()
-        if event.type == pygame.QUIT:
-            running = False
+ 
 
     # Fill the screen with a color (e.g., white)
     screen.fill(BLACK)
 
-    for enemy in enemies:
-        enemy.move()
-        for obj in objects:
-            if enemy != obj:
-                if enemy.collisionDetector(obj):
-                    if type(obj) == Enemy:
-                        print("collision")
-                        enemy.grow(obj.radius)
-                        obj.kill()
+
 
     for player in players:
         player.move()
@@ -161,25 +159,46 @@ while running:
             if player != obj:
                 if player.collisionDetector(obj):
                     player.grow(obj.radius)
-                    obj.kill()
+                    if isinstance(obj, Food):
+                        obj.relocate()
+                        player.grow(obj.radius)
+
+    for enemy in enemies:
+        enemy.move()
+        for obj in objects:
+            if enemy != obj:
+                if enemy.collisionDetector(obj):
+                    if isinstance(obj, Food):
+                        obj.relocate()
+                        enemy.grow(obj.radius)
+                    else:
+                        print("collision")
+                        enemy.grow(obj.radius)
+                        obj.kill()
+    
+        # Check win/lose conditions
+    if len(enemies) == 0:
+        screen.blit(won_surface, (screen_width // 2 - 50, screen_height // 2 - 18))
+        pygame.time.delay(3000)
+        running = False
+    elif len(players) == 0:
+        screen.blit(lost_surface, (screen_width // 2 - 60, screen_height // 2 - 18))
+        pygame.time.delay(3000)
+        running = False
+
     players.draw(screen)
     enemies.draw(screen)
-    # Paste all of the Food objects ont he screen.
     meals.draw(screen)
+
     # Update the display
     pygame.display.flip()
 
     # Set a frame rate to 60 frames per second
     clock.tick(60)
+
 # Quit Pygame properly
 pygame.quit()
 sys.exit()
-
-
-
-
-
-
 
 
 
