@@ -1,5 +1,3 @@
-
-
 import pygame
 import sys
 import random
@@ -147,6 +145,10 @@ objects.add(players)
 running = True
 while running:
  
+        # Event handling
+    for event in pygame.event.get(): # pygame.event.get()
+        if event.type == pygame.QUIT:
+            running = False
 
     # Fill the screen with a color (e.g., white)
     screen.fill(BLACK)
@@ -162,6 +164,8 @@ while running:
                     if isinstance(obj, Food):
                         obj.relocate()
                         player.grow(obj.radius)
+                    else:
+                        obj.kill()
 
     for enemy in enemies:
         enemy.move()
@@ -179,10 +183,14 @@ while running:
         # Check win/lose conditions
     if len(enemies) == 0:
         screen.blit(won_surface, (screen_width // 2 - 50, screen_height // 2 - 18))
+        for obj in objects:
+            obj.kill()
         pygame.time.delay(3000)
         running = False
     elif len(players) == 0:
         screen.blit(lost_surface, (screen_width // 2 - 60, screen_height // 2 - 18))
+        for obj in objects:
+            obj.kill()
         pygame.time.delay(3000)
         running = False
 
@@ -199,6 +207,8 @@ while running:
 # Quit Pygame properly
 pygame.quit()
 sys.exit()
+
+
 
 
 
